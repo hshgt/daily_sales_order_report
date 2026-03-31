@@ -341,12 +341,12 @@
   <div class="header-actions">
     <div class="upload-zone">
       <label class="upload-btn" id="lblDirect">
-        &#128196; Direct Orders
-        <input type="file" id="fileDirectOrders" accept=".xls,.xlsx,.xml" onchange="handleFile(this,'direct')"/>
+        <span id="lblDirectText">&#128196; Direct Orders</span>
+        <input type="file" id="fileDirectOrders" accept=".xls,.xlsx,.xml"/>
       </label>
       <label class="upload-btn" id="lblBulk">
-        &#128196; Bulk Orders
-        <input type="file" id="fileBulkOrders" accept=".xls,.xlsx,.xml" onchange="handleFile(this,'bulk')"/>
+        <span id="lblBulkText">&#128196; Bulk Orders</span>
+        <input type="file" id="fileBulkOrders" accept=".xls,.xlsx,.xml"/>
       </label>
     </div>
     <button class="print-btn" onclick="printReport()">&#128438; Print / Export PDF</button>
@@ -645,11 +645,11 @@ function handleFile(input, type) {
       if (type === 'direct') {
         directRows = rawRows.map(makeRowDirect).filter(r => r.so);
         document.getElementById('lblDirect').classList.add('loaded');
-        document.getElementById('lblDirect').innerHTML = '&#10003; Direct Orders<input type="file" id="fileDirectOrders" accept=".xls,.xlsx,.xml" onchange="handleFile(this,'direct')"/>';
+        document.getElementById('lblDirectText').textContent = '\u2713 Direct Orders';
       } else {
         bulkRows = rawRows.map(makeRowBulk).filter(r => r.so);
         document.getElementById('lblBulk').classList.add('loaded');
-        document.getElementById('lblBulk').innerHTML = '&#10003; Bulk Orders<input type="file" id="fileBulkOrders" accept=".xls,.xlsx,.xml" onchange="handleFile(this,'bulk')"/>';
+        document.getElementById('lblBulkText').textContent = '\u2713 Bulk Orders';
       }
       rebuildReport();
       setStatus('ok', `Loaded ${file.name} successfully`);
@@ -864,6 +864,18 @@ function printReport() {
     });
   }, 2000);
 }
+
+// ═══════════════════════════════════════════════════════════
+// WIRE UP FILE INPUTS ON DOM READY
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('fileDirectOrders').addEventListener('change', function() {
+    handleFile(this, 'direct');
+  });
+  document.getElementById('fileBulkOrders').addEventListener('change', function() {
+    handleFile(this, 'bulk');
+  });
+});
 </script>
 </body>
-</html>
+</html>b
