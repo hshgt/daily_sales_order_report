@@ -558,15 +558,26 @@ function switchTab(tabId, btn) {
 // XLS PARSER (NetSuite SpreadsheetML XML format)
 // ═══════════════════════════════════════════════════════════
 function parseNetsuiteXLS(xmlText) {
-  // Strip namespace prefixes so querySelector works
+  // NetSuite SpreadsheetML uses default namespace + ss: prefixed attributes.
+  // DOMParser rejects undeclared prefixes, so we must strip ALL of them:
+  // 1. Remove xmlns declarations
+  // 2. Remove prefix: from element tags  
+  // 3. Remove prefix: from attribute names (ss:Type= → Type=, ss:ID= → ID= etc.)
   let content = xmlText
-    .replace(/xmlns="[^"]*"/g, '')
-    .replace(/xmlns:[a-z]+="[^"]*"/g, '')
-    .replace(/<([a-z]+:)/gi, '<')
-    .replace(/<\/([a-z]+:)/gi, '</');
+    .replace(/xmlns(?::[a-z]+)?="[^"]*"/g, '')   // remove all xmlns declarations
+    .replace(/<([a-zA-Z]+):/g, '<')               // strip prefix from opening tags
+    .replace(/<\/([a-zA-Z]+):/g, '</')            // strip prefix from closing tags
+    .replace(/\b[a-zA-Z]+:([A-Za-z]+=)/g, '$1'); // strip prefix from attributes (ss:Type= → Type=)
 
   const parser = new DOMParser();
   const doc = parser.parseFromString(content, 'application/xml');
+
+  // Check for parse error
+  const parseErr = doc.querySelector('parsererror');
+  if (parseErr) {
+    console.error('XML parse error:', parseErr.textContent.slice(0, 200));
+    throw new Error('Could not parse file. Make sure it is a NetSuite XLS export.');
+  }
 
   const rows = [];
   doc.querySelectorAll('Row').forEach(rowEl => {
@@ -575,17 +586,17 @@ function parseNetsuiteXLS(xmlText) {
       const dataEl = cellEl.querySelector('Data');
       if (dataEl) {
         let val = dataEl.textContent || '';
-        // Strip HTML links (SO# column)
+        // Strip HTML links (SO# column has anchor tags as text)
         if (val.trim().startsWith('<')) val = '[HTML]';
         cells.push(val);
       } else {
         cells.push('');
       }
     });
-    rows.push(cells);
+    if (cells.length > 0) rows.push(cells);
   });
 
-  // Remove header row (first) and summary row (last)
+  // Remove header row (first) and summary/total row (last)
   return rows.slice(1, rows.length - 1);
 }
 
@@ -878,4 +889,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
-</html>b
+</html>
